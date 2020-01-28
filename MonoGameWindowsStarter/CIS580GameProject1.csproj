@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\neon_ball.png" />
+    <Content Include="Content\neon_paddle.png" />
     <Content Include="Content\neon_wall.png" />
     <Content Include="Icon.ico" />
   </ItemGroup>

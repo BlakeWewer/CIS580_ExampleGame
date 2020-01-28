@@ -15,9 +15,21 @@ namespace MonoGameWindowsStarter
         Random random = new Random();
         Texture2D ball;
         Texture2D wall;
-        Vector2 ballPosition = new Vector2(900, 389);
+        Texture2D paddle;
+        Vector2 ballPosition = new Vector2(900, 359);
+//        Vector2 ballPosition = new Vector2(900, 416);
         Vector2 ballVelocity;
         Vector2 wallPosition = Vector2.Zero;
+        Vector2 paddlePosition = new Vector2(950, 322);
+        Vector2 paddleVelocity = Vector2.Zero;
+        int hits = 0;
+        int hitsForNextBallSpeedInc = 7;
+        int hearts = 2;
+        int points = 0;
+        float defaultBallSpeedVariable = 0.5F;
+        float ballSpeedVariable = .5F;
+        float maxBallSpeedVariable = 2F;
+
 
         public Game1()
         {
@@ -38,15 +50,11 @@ namespace MonoGameWindowsStarter
             graphics.PreferredBackBufferHeight = 768;
             graphics.ApplyChanges();
 
-            float initYBallVelocity = (float)random.NextDouble();
-            float initXBallVelocity = -1 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+            //float initYBallVelocity = (float)random.NextDouble();
+            //float initXBallVelocity = -1 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+            //ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
 
-            //ballVelocity = new Vector2(
-            //    (float)random.NextDouble(),
-            //    (float)random.NextDouble()
-            //);
-
-            ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
+            ballVelocity = new Vector2(1, 0);
 
             ballVelocity.Normalize();
 
@@ -65,6 +73,7 @@ namespace MonoGameWindowsStarter
             // TODO: use this.Content to load your game content here
             ball = Content.Load<Texture2D>("neon_ball");
             wall = Content.Load<Texture2D>("neon_wall");
+            paddle = Content.Load<Texture2D>("neon_paddle");
         }
 
         /// <summary>
@@ -94,50 +103,141 @@ namespace MonoGameWindowsStarter
             // TODO: Add your update logic here
 
             // Update Ball Position
-            float ballSpeedVariable = .75F;
+            
+            if(hits >= hitsForNextBallSpeedInc)
+            {
+                ballSpeedVariable = Math.Min(ballSpeedVariable + .5F, maxBallSpeedVariable);
+                hitsForNextBallSpeedInc *= 2;
+            }
             ballPosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds * ballSpeedVariable * ballVelocity;
-//            ballPosition += ballVelocity;
+            //            ballPosition += ballVelocity;
 
-            // Check for wall collisions
-            //if(ballPosition.Y < -5)
-            //{
-            //    ballVelocity.Y *= -1;
-            //    float delta = -5 - ballPosition.Y;
-            //    ballPosition.Y += 2 * delta;
-            //}
-            //if (ballPosition.Y > graphics.PreferredBackBufferHeight - 45)
-            //{
-            //    ballVelocity.Y *= -1;
-            //    float delta = graphics.PreferredBackBufferHeight - 45 - ballPosition.Y;
-            //    ballPosition.Y += 2 * delta;
-            //}
+            // Update paddle position
+            float defaultPaddleSpeedVariable = 1.0F;
+            float fastPaddleSpeedVariable = 2.0F;
+            float slowPaddleSpeedVariable = .5F;
+            float paddleSpeedVariable = defaultPaddleSpeedVariable;
+            if (Keyboard.GetState().IsKeyUp(Keys.Up) && Keyboard.GetState().IsKeyUp(Keys.Up))
+            {
+                paddleSpeedVariable = defaultPaddleSpeedVariable;
+                paddleVelocity = Vector2.Zero;
+            }
+            else if (Keyboard.GetState().IsKeyDown(Keys.Up))
+            {
+                if (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl))
+                {
+                    paddleSpeedVariable = slowPaddleSpeedVariable;
+                }
+                else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
+                {
+                    paddleSpeedVariable = fastPaddleSpeedVariable;
+                }
+                else paddleSpeedVariable = defaultPaddleSpeedVariable;
+
+                paddleVelocity = new Vector2(0, -1);
+                paddlePosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds * paddleSpeedVariable * paddleVelocity;
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.Down))
+            {
+                if (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl))
+                {
+                    paddleSpeedVariable = slowPaddleSpeedVariable;
+                }
+                else if (Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift))
+                {
+                    paddleSpeedVariable = fastPaddleSpeedVariable;
+                }
+                else paddleSpeedVariable = defaultPaddleSpeedVariable;
+
+                paddleVelocity = new Vector2(0, 1);
+                paddlePosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds * paddleSpeedVariable * paddleVelocity;
+            }
+
+            // Check for paddle at boundary
+            if(paddlePosition.Y < 25)
+            {
+                float delta = 25 - paddlePosition.Y;
+                paddlePosition.Y += delta;
+            }
+            if (paddlePosition.Y > graphics.PreferredBackBufferHeight - 150)
+            {
+                float delta = graphics.PreferredBackBufferHeight - 150 - paddlePosition.Y;
+                paddlePosition.Y += delta;
+            }
+
+            // Check for paddle - ball collisions
+            if(ballVelocity.X > 0)
+            {
+                if (ballPosition.Y > paddlePosition.Y - 46 && ballPosition.Y < paddlePosition.Y + 13)
+                {
+                    if (ballPosition.X > 904 && ballPosition.X < 921)
+                    {
+                        ballVelocity.X = -1 * Math.Abs(ballVelocity.X);
+                        ballVelocity.Y -= 0.5F;
+                        ballVelocity.Normalize();
+                        hits++;
+                        Console.WriteLine(hits + " - " + ballSpeedVariable);
+                    }
+                }
+                if (ballPosition.Y > paddlePosition.Y + 12 && ballPosition.Y < paddlePosition.Y + 63)
+                {
+                    if (ballPosition.X > 904 && ballPosition.X < 920)
+                    {
+                        ballVelocity.X = -1 * Math.Abs(ballVelocity.X);
+                        ballVelocity.Y /= 2;
+                        ballVelocity.Normalize();
+                        hits++;
+                        Console.WriteLine(hits + " - " + ballSpeedVariable);
+                    }
+                }
+                if (ballPosition.Y > paddlePosition.Y + 62 && ballPosition.Y < paddlePosition.Y + 123)
+                {
+                    if (ballPosition.X > 904 && ballPosition.X < 921)
+                    {
+                        ballVelocity.X = -1 * Math.Abs(ballVelocity.X);
+                        ballVelocity.Y += 0.5F;
+                        ballVelocity.Normalize();
+                        hits++;
+                        Console.WriteLine(hits + " - " + ballSpeedVariable);
+                    }
+                }
+                // ballPosition.X < 963 would be a collision on the backside of the paddle
+            }
+
+
+            // Check for ball - wall collisions
             if (ballPosition.Y < -5)
             {
-                if(Math.Abs(ballVelocity.Y) > Math.Sqrt(2) * Math.Abs(ballVelocity.X))
-                {
-                    float delta = -5 - ballPosition.Y;
-                    ballPosition.Y += graphics.PreferredBackBufferHeight - 2 * delta;
-                }
-                else
+                if(Math.Abs(ballVelocity.Y) <= Math.Abs(ballVelocity.X))
                 {
                     ballVelocity.Y *= -1;
                     float delta = -5 - ballPosition.Y;
                     ballPosition.Y += 2 * delta;
                 }
-                
+                else
+                {
+                    if(ballPosition.Y < -25)
+                    {
+                        float delta = -25 - ballPosition.Y;
+                        ballPosition.Y += graphics.PreferredBackBufferHeight - 2 * delta;
+                    }
+                }
             }
             if (ballPosition.Y > graphics.PreferredBackBufferHeight - 45)
             {
-                if (Math.Abs(ballVelocity.Y) > Math.Sqrt(2) * Math.Abs(ballVelocity.X))
-                {
-                    float delta = -5 - ballPosition.Y;
-                    ballPosition.Y += -1 * graphics.PreferredBackBufferHeight + 2 * delta;
-                }
-                else
+                if (Math.Abs(ballVelocity.Y) <= Math.Abs(ballVelocity.X))
                 {
                     ballVelocity.Y *= -1;
                     float delta = graphics.PreferredBackBufferHeight - 45 - ballPosition.Y;
                     ballPosition.Y += 2 * delta;
+                }
+                else
+                {
+                    if(ballPosition.Y > graphics.PreferredBackBufferHeight - 25)
+                    {
+                        float delta = graphics.PreferredBackBufferHeight - 25 - ballPosition.Y;
+                        ballPosition.Y += -1 * graphics.PreferredBackBufferHeight - 2 * delta;
+                    }
                 }
             }
 
@@ -154,6 +254,7 @@ namespace MonoGameWindowsStarter
                 ballPosition.X += 2 * delta;
             }
 
+            
             base.Update(gameTime);
         }
 
@@ -169,9 +270,11 @@ namespace MonoGameWindowsStarter
             spriteBatch.Begin();
             spriteBatch.Draw(ball, new Rectangle((int)(ballPosition.X),
                                                     (int)(ballPosition.Y), 
-                                                    50, 
-                                                    50), Color.White);
+                                                    50, 50), Color.White);
             spriteBatch.Draw(wall, new Rectangle(-25, -3, 70, 1042), Color.White);
+            spriteBatch.Draw(paddle, new Rectangle((int)(paddlePosition.X),
+                                                    (int)(paddlePosition.Y),
+                                                    20, 125), Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
