@@ -8,16 +8,18 @@ namespace MonoGameWindowsStarter
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
-    public class ExampleGame : Game
+    public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Random random = new Random();
         Texture2D ball;
-        Vector2 ballPosition = Vector2.Zero;
+        Texture2D wall;
+        Vector2 ballPosition = new Vector2(900, 389);
         Vector2 ballVelocity;
+        Vector2 wallPosition = Vector2.Zero;
 
-        public ExampleGame()
+        public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -36,10 +38,15 @@ namespace MonoGameWindowsStarter
             graphics.PreferredBackBufferHeight = 768;
             graphics.ApplyChanges();
 
-            ballVelocity = new Vector2(
-                (float)random.NextDouble(),
-                (float)random.NextDouble()
-            );
+            float initYBallVelocity = (float)random.NextDouble();
+            float initXBallVelocity = -1 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+
+            //ballVelocity = new Vector2(
+            //    (float)random.NextDouble(),
+            //    (float)random.NextDouble()
+            //);
+
+            ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
 
             ballVelocity.Normalize();
 
@@ -56,7 +63,8 @@ namespace MonoGameWindowsStarter
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            ball = Content.Load<Texture2D>("ball");
+            ball = Content.Load<Texture2D>("neon_ball");
+            wall = Content.Load<Texture2D>("neon_wall");
         }
 
         /// <summary>
@@ -86,31 +94,63 @@ namespace MonoGameWindowsStarter
             // TODO: Add your update logic here
 
             // Update Ball Position
-            ballPosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds*ballVelocity;
+            float ballSpeedVariable = .75F;
+            ballPosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds * ballSpeedVariable * ballVelocity;
+//            ballPosition += ballVelocity;
 
             // Check for wall collisions
-            if(ballPosition.Y < 0)
+            //if(ballPosition.Y < -5)
+            //{
+            //    ballVelocity.Y *= -1;
+            //    float delta = -5 - ballPosition.Y;
+            //    ballPosition.Y += 2 * delta;
+            //}
+            //if (ballPosition.Y > graphics.PreferredBackBufferHeight - 45)
+            //{
+            //    ballVelocity.Y *= -1;
+            //    float delta = graphics.PreferredBackBufferHeight - 45 - ballPosition.Y;
+            //    ballPosition.Y += 2 * delta;
+            //}
+            if (ballPosition.Y < -5)
             {
-                ballVelocity.Y *= -1;
-                float delta = 0 - ballPosition.Y;
-                ballPosition.Y += 2 * delta;
+                if(Math.Abs(ballVelocity.Y) > Math.Sqrt(2) * Math.Abs(ballVelocity.X))
+                {
+                    float delta = -5 - ballPosition.Y;
+                    ballPosition.Y += graphics.PreferredBackBufferHeight - 2 * delta;
+                }
+                else
+                {
+                    ballVelocity.Y *= -1;
+                    float delta = -5 - ballPosition.Y;
+                    ballPosition.Y += 2 * delta;
+                }
+                
             }
-            if (ballPosition.Y > graphics.PreferredBackBufferHeight - 100)
+            if (ballPosition.Y > graphics.PreferredBackBufferHeight - 45)
             {
-                ballVelocity.Y *= -1;
-                float delta = graphics.PreferredBackBufferHeight - 100 - ballPosition.Y;
-                ballPosition.Y += 2 * delta;
+                if (Math.Abs(ballVelocity.Y) > Math.Sqrt(2) * Math.Abs(ballVelocity.X))
+                {
+                    float delta = -5 - ballPosition.Y;
+                    ballPosition.Y += -1 * graphics.PreferredBackBufferHeight + 2 * delta;
+                }
+                else
+                {
+                    ballVelocity.Y *= -1;
+                    float delta = graphics.PreferredBackBufferHeight - 45 - ballPosition.Y;
+                    ballPosition.Y += 2 * delta;
+                }
             }
-            if (ballPosition.X < 0)
+
+            if (ballPosition.X < 25)
             {
                 ballVelocity.X *= -1;
-                float delta = 0 - ballPosition.X;
+                float delta = 25 - ballPosition.X;
                 ballPosition.X += 2 * delta;
             }
-            if (ballPosition.X > graphics.PreferredBackBufferWidth - 100)
+            if (ballPosition.X > graphics.PreferredBackBufferWidth - 45)
             {
                 ballVelocity.X *= -1;
-                float delta = graphics.PreferredBackBufferWidth - 100 - ballPosition.X;
+                float delta = graphics.PreferredBackBufferWidth - 45 - ballPosition.X;
                 ballPosition.X += 2 * delta;
             }
 
@@ -123,14 +163,15 @@ namespace MonoGameWindowsStarter
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
             spriteBatch.Begin();
             spriteBatch.Draw(ball, new Rectangle((int)(ballPosition.X),
                                                     (int)(ballPosition.Y), 
-                                                    100, 
-                                                    100), Color.White);
+                                                    50, 
+                                                    50), Color.White);
+            spriteBatch.Draw(wall, new Rectangle(-25, -3, 70, 1042), Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);

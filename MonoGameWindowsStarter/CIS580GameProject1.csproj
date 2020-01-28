@@ -41,7 +41,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ExampleGame.cs" />
+    <Compile Include="Game1.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -53,6 +53,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\neon_ball.png" />
+    <Content Include="Content\neon_wall.png" />
     <Content Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>
