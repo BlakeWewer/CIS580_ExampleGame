@@ -1,32 +1,47 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 
 namespace MonoGameWindowsStarter
 {
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
-    public class Game1 : Game
+    public class ExampleGame : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        Random random = new Random();
+        Texture2D ball;
+        Vector2 ballPosition = Vector2.Zero;
+        Vector2 ballVelocity;
 
-        public Game1()
+        public ExampleGame()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
 
         /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
+        /// Allows the game to perform any initialization it needs to before starting to run. 
         /// This is where it can query for any required services and load any non-graphic
         /// related content.  Calling base.Initialize will enumerate through any components
         /// and initialize them as well.
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+            // TODO: Add your initialization logic here 
+            graphics.PreferredBackBufferWidth = 1042;
+            graphics.PreferredBackBufferHeight = 768;
+            graphics.ApplyChanges();
+
+            ballVelocity = new Vector2(
+                (float)random.NextDouble(),
+                (float)random.NextDouble()
+            );
+
+            ballVelocity.Normalize();
 
             base.Initialize();
         }
@@ -41,6 +56,7 @@ namespace MonoGameWindowsStarter
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
+            ball = Content.Load<Texture2D>("ball");
         }
 
         /// <summary>
@@ -62,7 +78,41 @@ namespace MonoGameWindowsStarter
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            if(Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
+                Exit();
+            }
+
             // TODO: Add your update logic here
+
+            // Update Ball Position
+            ballPosition += (float)gameTime.ElapsedGameTime.TotalMilliseconds*ballVelocity;
+
+            // Check for wall collisions
+            if(ballPosition.Y < 0)
+            {
+                ballVelocity.Y *= -1;
+                float delta = 0 - ballPosition.Y;
+                ballPosition.Y += 2 * delta;
+            }
+            if (ballPosition.Y > graphics.PreferredBackBufferHeight - 100)
+            {
+                ballVelocity.Y *= -1;
+                float delta = graphics.PreferredBackBufferHeight - 100 - ballPosition.Y;
+                ballPosition.Y += 2 * delta;
+            }
+            if (ballPosition.X < 0)
+            {
+                ballVelocity.X *= -1;
+                float delta = 0 - ballPosition.X;
+                ballPosition.X += 2 * delta;
+            }
+            if (ballPosition.X > graphics.PreferredBackBufferWidth - 100)
+            {
+                ballVelocity.X *= -1;
+                float delta = graphics.PreferredBackBufferWidth - 100 - ballPosition.X;
+                ballPosition.X += 2 * delta;
+            }
 
             base.Update(gameTime);
         }
@@ -76,6 +126,12 @@ namespace MonoGameWindowsStarter
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
+            spriteBatch.Begin();
+            spriteBatch.Draw(ball, new Rectangle((int)(ballPosition.X),
+                                                    (int)(ballPosition.Y), 
+                                                    100, 
+                                                    100), Color.White);
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }
