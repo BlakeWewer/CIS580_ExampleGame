@@ -16,19 +16,26 @@ namespace MonoGameWindowsStarter
         Texture2D ball;
         Texture2D wall;
         Texture2D paddle;
+        Texture2D game_over;
+        SpriteFont font;
         Vector2 ballPosition = new Vector2(900, 359);
-//        Vector2 ballPosition = new Vector2(900, 416);
         Vector2 ballVelocity;
         Vector2 wallPosition = Vector2.Zero;
         Vector2 paddlePosition = new Vector2(950, 322);
+        Rectangle paddleRect, wallRect, ballRect, game_over_Rect;
         Vector2 paddleVelocity = Vector2.Zero;
         int hits = 0;
         int hitsForNextBallSpeedInc = 7;
-        int hearts = 2;
+        int num_lives = 2;
         int points = 0;
+        Vector2 pointsPosition;
         float defaultBallSpeedVariable = 0.5F;
         float ballSpeedVariable = .5F;
         float maxBallSpeedVariable = 2F;
+        Texture2D live;
+        int live_dim = 20;
+        Rectangle[] lives;
+        int old_points;
 
 
         public Game1()
@@ -50,13 +57,38 @@ namespace MonoGameWindowsStarter
             graphics.PreferredBackBufferHeight = 768;
             graphics.ApplyChanges();
 
-            //float initYBallVelocity = (float)random.NextDouble();
-            //float initXBallVelocity = -1 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
-            //ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
-
-            ballVelocity = new Vector2(1, 0);
+            float initYBallVelocity = (float)random.NextDouble();
+            float initXBallVelocity = -2 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+            ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
 
             ballVelocity.Normalize();
+
+
+            ballRect.X = (int)ballPosition.X;
+            ballRect.Y = (int)ballPosition.Y;
+            ballRect.Height = 50;
+            ballRect.Width = 50;
+
+            paddleRect.X = (int)paddlePosition.X;
+            paddleRect.Y = (int)paddlePosition.Y;
+            paddleRect.Height = 125;
+            paddleRect.Width = 20;
+
+            wallRect.X = -25;
+            wallRect.Y = -3;
+            wallRect.Height = 1042;
+            wallRect.Width = 70;
+
+            game_over_Rect.X = 171;
+            game_over_Rect.Y = 34;
+            game_over_Rect.Width = 700;
+            game_over_Rect.Height = 700;
+
+            pointsPosition = new Vector2(graphics.GraphicsDevice.Viewport.Width - 200, 10);
+
+            lives = new Rectangle[] { new Rectangle(graphics.PreferredBackBufferWidth - 30, 10, live_dim, live_dim),
+                        new Rectangle(graphics.PreferredBackBufferWidth - 55, 10, live_dim, live_dim),
+                        new Rectangle(graphics.PreferredBackBufferWidth - 80, 10, live_dim, live_dim)};
 
             base.Initialize();
         }
@@ -74,6 +106,9 @@ namespace MonoGameWindowsStarter
             ball = Content.Load<Texture2D>("neon_ball");
             wall = Content.Load<Texture2D>("neon_wall");
             paddle = Content.Load<Texture2D>("neon_paddle");
+            live = Content.Load<Texture2D>("neon_ball");
+            font = Content.Load<SpriteFont>("font");
+            game_over = Content.Load<Texture2D>("game_over");
         }
 
         /// <summary>
@@ -95,16 +130,15 @@ namespace MonoGameWindowsStarter
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            if(Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 Exit();
             }
 
             // TODO: Add your update logic here
-
             // Update Ball Position
-            
-            if(hits >= hitsForNextBallSpeedInc)
+
+            if (hits >= hitsForNextBallSpeedInc)
             {
                 ballSpeedVariable = Math.Min(ballSpeedVariable + .5F, maxBallSpeedVariable);
                 hitsForNextBallSpeedInc *= 2;
@@ -154,7 +188,7 @@ namespace MonoGameWindowsStarter
             }
 
             // Check for paddle at boundary
-            if(paddlePosition.Y < 25)
+            if (paddlePosition.Y < 25)
             {
                 float delta = 25 - paddlePosition.Y;
                 paddlePosition.Y += delta;
@@ -166,7 +200,7 @@ namespace MonoGameWindowsStarter
             }
 
             // Check for paddle - ball collisions
-            if(ballVelocity.X > 0)
+            if (ballVelocity.X > 0)
             {
                 if (ballPosition.Y > paddlePosition.Y - 46 && ballPosition.Y < paddlePosition.Y + 13)
                 {
@@ -176,7 +210,6 @@ namespace MonoGameWindowsStarter
                         ballVelocity.Y -= 0.5F;
                         ballVelocity.Normalize();
                         hits++;
-                        Console.WriteLine(hits + " - " + ballSpeedVariable);
                     }
                 }
                 if (ballPosition.Y > paddlePosition.Y + 12 && ballPosition.Y < paddlePosition.Y + 63)
@@ -187,7 +220,6 @@ namespace MonoGameWindowsStarter
                         ballVelocity.Y /= 2;
                         ballVelocity.Normalize();
                         hits++;
-                        Console.WriteLine(hits + " - " + ballSpeedVariable);
                     }
                 }
                 if (ballPosition.Y > paddlePosition.Y + 62 && ballPosition.Y < paddlePosition.Y + 123)
@@ -198,7 +230,6 @@ namespace MonoGameWindowsStarter
                         ballVelocity.Y += 0.5F;
                         ballVelocity.Normalize();
                         hits++;
-                        Console.WriteLine(hits + " - " + ballSpeedVariable);
                     }
                 }
                 // ballPosition.X < 963 would be a collision on the backside of the paddle
@@ -208,7 +239,7 @@ namespace MonoGameWindowsStarter
             // Check for ball - wall collisions
             if (ballPosition.Y < -5)
             {
-                if(Math.Abs(ballVelocity.Y) <= Math.Abs(ballVelocity.X))
+                if (Math.Abs(ballVelocity.Y) <= Math.Abs(ballVelocity.X))
                 {
                     ballVelocity.Y *= -1;
                     float delta = -5 - ballPosition.Y;
@@ -216,7 +247,7 @@ namespace MonoGameWindowsStarter
                 }
                 else
                 {
-                    if(ballPosition.Y < -25)
+                    if (ballPosition.Y < -25)
                     {
                         float delta = -25 - ballPosition.Y;
                         ballPosition.Y += graphics.PreferredBackBufferHeight - 2 * delta;
@@ -233,7 +264,7 @@ namespace MonoGameWindowsStarter
                 }
                 else
                 {
-                    if(ballPosition.Y > graphics.PreferredBackBufferHeight - 25)
+                    if (ballPosition.Y > graphics.PreferredBackBufferHeight - 25)
                     {
                         float delta = graphics.PreferredBackBufferHeight - 25 - ballPosition.Y;
                         ballPosition.Y += -1 * graphics.PreferredBackBufferHeight - 2 * delta;
@@ -247,14 +278,41 @@ namespace MonoGameWindowsStarter
                 float delta = 25 - ballPosition.X;
                 ballPosition.X += 2 * delta;
             }
-            if (ballPosition.X > graphics.PreferredBackBufferWidth - 45)
+            if (ballPosition.X > graphics.PreferredBackBufferWidth)
             {
                 ballVelocity.X *= -1;
                 float delta = graphics.PreferredBackBufferWidth - 45 - ballPosition.X;
                 ballPosition.X += 2 * delta;
+                num_lives--;
+
+                // Reset Ball
+                ballSpeedVariable = defaultBallSpeedVariable;
+                float initYBallVelocity = (float)random.NextDouble();
+                float initXBallVelocity = -2 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+                ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
+
+                ballVelocity.Normalize();
+
+                ballPosition = new Vector2(900, 359);
+                hits = 0;
+                hitsForNextBallSpeedInc = 7;
+
+            }
+            paddleRect.Location = new Point((int)paddlePosition.X, (int)paddlePosition.Y);
+            ballRect.Location = new Point((int)ballPosition.X, (int)ballPosition.Y);
+
+            if(num_lives > 0)
+            {
+                old_points = points;
+                points++;
+            }
+            
+
+            if(points > 10000 && old_points <= 10000)
+            {
+                num_lives += 1;
             }
 
-            
             base.Update(gameTime);
         }
 
@@ -267,14 +325,28 @@ namespace MonoGameWindowsStarter
             GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
+            
             spriteBatch.Begin();
-            spriteBatch.Draw(ball, new Rectangle((int)(ballPosition.X),
-                                                    (int)(ballPosition.Y), 
-                                                    50, 50), Color.White);
-            spriteBatch.Draw(wall, new Rectangle(-25, -3, 70, 1042), Color.White);
-            spriteBatch.Draw(paddle, new Rectangle((int)(paddlePosition.X),
-                                                    (int)(paddlePosition.Y),
-                                                    20, 125), Color.White);
+            if(num_lives > 0)
+            {
+                spriteBatch.Draw(ball, ballRect, Color.White);
+                spriteBatch.Draw(wall, wallRect, Color.White);
+                spriteBatch.Draw(paddle, paddleRect, Color.White);
+                int i = 0;
+                while (i < num_lives)
+                {
+                    spriteBatch.Draw(live, lives[i], Color.White);
+                    i++;
+                }
+                spriteBatch.DrawString(font, "Score: " + points.ToString(), pointsPosition, Color.White);
+            }
+            else
+            {
+                // GAME OVER & Show score.
+                spriteBatch.Draw(game_over, game_over_Rect, Color.White);
+                Vector2 fontCentered = font.MeasureString("Score: " + points.ToString()) / 2;
+                spriteBatch.DrawString(font, "Score: " + points.ToString(), new Vector2((graphics.GraphicsDevice.Viewport.Width / 2) - fontCentered.X, (graphics.GraphicsDevice.Viewport.Height / 2) + 100), Color.Black);
+            }
             spriteBatch.End();
 
             base.Draw(gameTime);
