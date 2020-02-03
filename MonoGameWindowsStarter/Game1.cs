@@ -466,21 +466,21 @@ namespace MonoGameWindowsStarter
 
             if(game_timer > 1000 && !k1_exists && k1_timer > 500)
             {
-                if(random.NextDouble() > .0005)
+                if(random.NextDouble() > .0000005)
                 {
                     k1_exists = true;
                 }
             }
             if(game_timer > 2500 && !k5_exists && k5_timer > 2000)
             {
-                if (random.NextDouble() > .00025)
+                if (random.NextDouble() > .00000025)
                 {
                     k5_exists = true;
                 }
             }
             if(game_timer > 7500 && !k10_exists && k10_timer > 5000)
             {
-                if (random.NextDouble() > .0001)
+                if (random.NextDouble() > .0000001)
                 {
                     k10_exists = true;
                 }
