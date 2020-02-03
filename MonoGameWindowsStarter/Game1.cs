@@ -441,7 +441,13 @@ namespace MonoGameWindowsStarter
                     num_lives = 2;
                     end_game_timer = 0;
                     game_timer = 0;
+                    k1_timer = 0;
+                    k5_timer = 0;
+                    k10_timer = 0;
                     hits = 0;
+                    k1_exists = false;
+                    k5_exists = false;
+                    k10_exists = false;
                     hitsForNextBallSpeedInc = 7;
                     ballPosition = new Vector2(900, 359);
                     paddlePosition = new Vector2(950, 322);
@@ -449,9 +455,6 @@ namespace MonoGameWindowsStarter
                     float initXBallVelocity = -2 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
                     ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
                     ballSpeedVariable = defaultBallSpeedVariable;
-                    k1_timer = 0;
-                    k5_timer = 0;
-                    k10_timer = 0;
 
                     ballVelocity.Normalize();
 
@@ -461,21 +464,21 @@ namespace MonoGameWindowsStarter
                 }
             }
 
-            if(game_timer > 100 && !k1_exists && k1_timer > 500)
+            if(game_timer > 1000 && !k1_exists && k1_timer > 500)
             {
                 if(random.NextDouble() > .0005)
                 {
                     k1_exists = true;
                 }
             }
-            if(game_timer > 500 && !k5_exists && k5_timer > 500)
+            if(game_timer > 2500 && !k5_exists && k5_timer > 2000)
             {
                 if (random.NextDouble() > .00025)
                 {
                     k5_exists = true;
                 }
             }
-            if(game_timer > 1000 && !k10_exists && k10_timer > 500)
+            if(game_timer > 7500 && !k10_exists && k10_timer > 5000)
             {
                 if (random.NextDouble() > .0001)
                 {
@@ -536,8 +539,8 @@ namespace MonoGameWindowsStarter
             {
                 // GAME OVER & Show score.
                 spriteBatch.Draw(game_over, game_over_Rect, Color.White);
-                Vector2 fontCentered = font.MeasureString("Score: " + points.ToString()) / 2;
-                spriteBatch.DrawString(font, "Score: " + points.ToString(), new Vector2((graphics.GraphicsDevice.Viewport.Width / 2) - fontCentered.X, (graphics.GraphicsDevice.Viewport.Height / 2) + 100), Color.Black);
+                Vector2 fontCentered = font.MeasureString("Score: " + old_points.ToString()) / 2;
+                spriteBatch.DrawString(font, "Score: " + old_points.ToString(), new Vector2((graphics.GraphicsDevice.Viewport.Width / 2) - fontCentered.X, (graphics.GraphicsDevice.Viewport.Height / 2) + 100), Color.Black);
                 end_game_timer++;
                 if(end_game_timer > 300)
                 {
