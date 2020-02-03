@@ -478,7 +478,7 @@ namespace MonoGameWindowsStarter
                     k5_exists = true;
                 }
             }
-            if(game_timer > 7500 && !k10_exists && k10_timer > 5000)
+            if(game_timer > 5000 && !k10_exists && k10_timer > 5000)
             {
                 if (random.NextDouble() > .0000001)
                 {
