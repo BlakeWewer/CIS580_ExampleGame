@@ -17,13 +17,22 @@ namespace MonoGameWindowsStarter
         Texture2D wall;
         Texture2D paddle;
         Texture2D game_over;
+        Texture2D k1;
+        Texture2D k5;
+        Texture2D k10;
         SpriteFont font;
         Vector2 ballPosition = new Vector2(900, 359);
         Vector2 ballVelocity;
+        float ballRadius;
         Vector2 wallPosition = Vector2.Zero;
         Vector2 paddlePosition = new Vector2(950, 322);
-        Rectangle paddleRect, wallRect, ballRect, game_over_Rect;
+        Rectangle paddleRect, wallRect, ballRect, game_over_Rect, k1Rect, k5Rect, k10Rect;
         Vector2 paddleVelocity = Vector2.Zero;
+        Vector2 k10Position;
+        Vector2 k10Velocity;
+        float k1Radius;
+        float k5Radius;
+        float k10Radius;
         int hits = 0;
         int hitsForNextBallSpeedInc = 7;
         int num_lives = 2;
@@ -36,6 +45,18 @@ namespace MonoGameWindowsStarter
         int live_dim = 20;
         Rectangle[] lives;
         int old_points;
+        float end_game_timer = 0;
+        float game_timer = 0;
+        float k1_timer = 0;
+        float k5_timer = 0;
+        float k10_timer = 0;
+        bool k1_exists = false;
+        bool k5_exists = false;
+        bool k10_exists = false;
+        float minDistK1Collision;
+        float minDistK5Collision;
+        float minDistK10Collision;
+
 
 
         public Game1()
@@ -68,6 +89,7 @@ namespace MonoGameWindowsStarter
             ballRect.Y = (int)ballPosition.Y;
             ballRect.Height = 50;
             ballRect.Width = 50;
+            ballRadius = (ballRect.Height - 20) - 2;
 
             paddleRect.X = (int)paddlePosition.X;
             paddleRect.Y = (int)paddlePosition.Y;
@@ -84,11 +106,36 @@ namespace MonoGameWindowsStarter
             game_over_Rect.Width = 700;
             game_over_Rect.Height = 700;
 
+            k1Rect.X = random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200);
+            k1Rect.Y = random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50);
+            k1Rect.Height = 50;
+            k1Rect.Width = 50;
+            k1Radius = (k1Rect.Height - 20) / 2;
+
+            k5Rect.X = random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200);
+            k5Rect.Y = random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50);
+            k5Rect.Height = 50;
+            k5Rect.Width = 50;
+            k5Radius = (k5Rect.Height - 20) / 2;
+
+            k10Position = new Vector2(random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200), random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50));
+            k10Rect.X = (int)k10Position.X;
+            k10Rect.Y = (int)k10Position.Y;
+            k10Rect.Height = 50;
+            k10Rect.Width = 50;
+            k10Radius = (k10Rect.Height - 20) / 2;
+            k10Velocity = new Vector2((float)random.NextDouble(), (float)random.NextDouble());
+            k10Velocity.Normalize();
+
             pointsPosition = new Vector2(graphics.GraphicsDevice.Viewport.Width - 200, 10);
 
             lives = new Rectangle[] { new Rectangle(graphics.PreferredBackBufferWidth - 30, 10, live_dim, live_dim),
                         new Rectangle(graphics.PreferredBackBufferWidth - 55, 10, live_dim, live_dim),
                         new Rectangle(graphics.PreferredBackBufferWidth - 80, 10, live_dim, live_dim)};
+
+            minDistK1Collision = k1Radius + ballRadius;
+            minDistK5Collision = k5Radius + ballRadius;
+            minDistK10Collision = k10Radius + ballRadius;
 
             base.Initialize();
         }
@@ -109,6 +156,9 @@ namespace MonoGameWindowsStarter
             live = Content.Load<Texture2D>("neon_ball");
             font = Content.Load<SpriteFont>("font");
             game_over = Content.Load<Texture2D>("game_over");
+            k1 = Content.Load<Texture2D>("1K");
+            k5 = Content.Load<Texture2D>("5K");
+            k10 = Content.Load<Texture2D>("10K");
         }
 
         /// <summary>
@@ -301,17 +351,142 @@ namespace MonoGameWindowsStarter
             paddleRect.Location = new Point((int)paddlePosition.X, (int)paddlePosition.Y);
             ballRect.Location = new Point((int)ballPosition.X, (int)ballPosition.Y);
 
-            if(num_lives > 0)
+            if(k1_exists)
+            {
+                // Check for k1 - ball collisions
+                float minDistK1Collision = k1Radius + ballRadius;
+                if (Math.Sqrt(Math.Pow(k1Rect.X - ballRect.X, 2) + Math.Pow(k1Rect.Y - ballRect.Y, 2)) < minDistK1Collision)
+                {
+                    k1_exists = false;
+                    points += 1000;
+                    k1_timer = 0;
+                    k1Rect.X = random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200);
+                    k1Rect.Y = random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50);
+                }
+            }
+
+            if(k5_exists)
+            {
+                // Check for k5 - ball collisions
+                if (Math.Sqrt(Math.Pow(k5Rect.X - ballRect.X, 2) + Math.Pow(k5Rect.Y - ballRect.Y, 2)) < minDistK5Collision)
+                {
+                    k5_exists = false;
+                    points += 5000;
+                    k5_timer = 0;
+                    k5Rect.X = random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200);
+                    k5Rect.Y = random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50);
+                }
+            }
+
+            // Check for k10 - wall collisions
+            if(k10_exists)
+            {
+                k10Position += (float)gameTime.ElapsedGameTime.TotalMilliseconds * .25F * k10Velocity;
+                
+                if (k10Position.Y < -5)
+                {
+                    k10Velocity.Y *= -1;
+                    float delta = -5 - k10Position.Y;
+                    k10Position.Y += 2 * delta;
+                }
+                if (k10Position.Y > graphics.PreferredBackBufferHeight - 45)
+                {
+                    k10Velocity.Y *= -1;
+                    float delta = graphics.PreferredBackBufferHeight - 45 - k10Position.Y;
+                    k10Position.Y += 2 * delta;
+                }
+                if (k10Position.X < 25)
+                {
+                    k10Velocity.X *= -1;
+                    float delta = 25 - k10Position.X;
+                    k10Position.X += 2 * delta;
+                }
+                if (k10Position.X > graphics.PreferredBackBufferWidth - 45)
+                {
+                    k10Velocity.X *= -1;
+                    float delta = graphics.PreferredBackBufferWidth - 45 - k10Position.X;
+                    k10Position.X += 2 * delta;
+                }
+                k10Rect.Location = new Point((int)k10Position.X, (int)k10Position.Y);
+
+                // Check for k10 - ball collisions
+                float minDistK10Collision = k10Radius + ballRadius;
+                if (Math.Sqrt(Math.Pow(k10Rect.X - ballRect.X, 2) + Math.Pow(k10Rect.Y - ballRect.Y, 2)) < minDistK10Collision)
+                {
+                    k10_exists = false; 
+                    points += 10000;
+                    k10_timer = 0;
+                    k5Rect.X = random.Next(100, graphics.GraphicsDevice.Viewport.Width - 200);
+                    k5Rect.Y = random.Next(50, graphics.GraphicsDevice.Viewport.Height - 50);
+                }
+            }
+
+            if (num_lives > 0)
             {
                 old_points = points;
                 points++;
             }
             
 
-            if(points > 10000 && old_points <= 10000)
+            if(points > 20000 && old_points <= 20000)
             {
                 num_lives += 1;
             }
+
+            if(end_game_timer > 300)
+            {
+                if (Keyboard.GetState().IsKeyDown(Keys.Enter))
+                {
+                    points = 0;
+                    num_lives = 2;
+                    end_game_timer = 0;
+                    game_timer = 0;
+                    hits = 0;
+                    hitsForNextBallSpeedInc = 7;
+                    ballPosition = new Vector2(900, 359);
+                    paddlePosition = new Vector2(950, 322);
+                    float initYBallVelocity = (float)random.NextDouble();
+                    float initXBallVelocity = -2 * (Math.Max((float)random.NextDouble(), initYBallVelocity));
+                    ballVelocity = new Vector2(initXBallVelocity, initYBallVelocity);
+                    ballSpeedVariable = defaultBallSpeedVariable;
+                    k1_timer = 0;
+                    k5_timer = 0;
+                    k10_timer = 0;
+
+                    ballVelocity.Normalize();
+
+
+                    ballRect.X = (int)ballPosition.X;
+                    ballRect.Y = (int)ballPosition.Y;
+                }
+            }
+
+            if(game_timer > 100 && !k1_exists && k1_timer > 500)
+            {
+                if(random.NextDouble() > .0005)
+                {
+                    k1_exists = true;
+                }
+            }
+            if(game_timer > 500 && !k5_exists && k5_timer > 500)
+            {
+                if (random.NextDouble() > .00025)
+                {
+                    k5_exists = true;
+                }
+            }
+            if(game_timer > 1000 && !k10_exists && k10_timer > 500)
+            {
+                if (random.NextDouble() > .0001)
+                {
+                    k10_exists = true;
+                }
+            }
+
+            k1_timer++;
+            k5_timer++;
+            k10_timer++;
+            game_timer++;
 
             base.Update(gameTime);
         }
@@ -339,6 +514,23 @@ namespace MonoGameWindowsStarter
                     i++;
                 }
                 spriteBatch.DrawString(font, "Score: " + points.ToString(), pointsPosition, Color.White);
+                spriteBatch.DrawString(font, "Move Paddle -> Arrow Keys(Up & Down)      Change Paddle Speed -> Shift(Faster), Nothing(Normal), Ctrl(Slower)", new Vector2(35, 5), Color.White);
+
+                if(k1_exists)
+                {
+                    spriteBatch.Draw(k1, k1Rect, Color.White);
+                    k1_timer++;
+                }
+                if (k5_exists)
+                {
+                    spriteBatch.Draw(k5, k5Rect, Color.White);
+                    k5_timer++;
+                }
+                if (k10_exists)
+                {
+                    spriteBatch.Draw(k10, k10Rect, Color.White);
+                    k10_timer++;
+                }
             }
             else
             {
@@ -346,6 +538,12 @@ namespace MonoGameWindowsStarter
                 spriteBatch.Draw(game_over, game_over_Rect, Color.White);
                 Vector2 fontCentered = font.MeasureString("Score: " + points.ToString()) / 2;
                 spriteBatch.DrawString(font, "Score: " + points.ToString(), new Vector2((graphics.GraphicsDevice.Viewport.Width / 2) - fontCentered.X, (graphics.GraphicsDevice.Viewport.Height / 2) + 100), Color.Black);
+                end_game_timer++;
+                if(end_game_timer > 300)
+                {
+                    Vector2 end_game_fontCentered = font.MeasureString("Press Enter to Restart") / 2;
+                    spriteBatch.DrawString(font, "Press Enter to Restart", new Vector2((graphics.GraphicsDevice.Viewport.Width / 2) - end_game_fontCentered.X, (graphics.GraphicsDevice.Viewport.Height / 2) + 200), Color.Black);
+                }
             }
             spriteBatch.End();
 
